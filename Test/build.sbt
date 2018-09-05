@@ -19,4 +19,3 @@ libraryDependencies ++= Seq(
 )
 // https://mvnrepository.com/artifact/org.apache.spark/spark-mllib
 libraryDependencies += "org.apache.spark" %% "spark-mllib" % "1.4.0" % "runtime"
-logLevel in run := Level.DEBUG

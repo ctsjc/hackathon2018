@@ -1,0 +1,11 @@
+to,from,date,rank
+myself,manager,today,100
+myself, myteam,today,200
+myself,mygroup,today,300
+myself, myteam,yesterday,400
+myself,manager,yesterday,100
+ myteam,manager,today,150
+ myteam, myteam,today,500
+ myteam,mygroup,today,600
+ myteam,mygroup,yesterday,500
+mygroup,manager,today,200

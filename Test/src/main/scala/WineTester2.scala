@@ -1,26 +1,25 @@
+import org.apache.log4j._
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.ml.evaluation.RegressionEvaluator
 import org.apache.spark.ml.feature.{StringIndexer, VectorAssembler}
 import org.apache.spark.ml.regression.GBTRegressor
-import org.apache.spark.sql.types.{DoubleType, StringType, StructField, StructType}
-import org.apache.spark.sql.{Encoders, SparkSession}
-import org.apache.log4j._
-object WineTester {
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.types._
+
+object WineTester2 {
   def main(args: Array[String]) = {
     Logger.getLogger("org").setLevel(Level.ERROR)
     val spark = SparkSession.builder
-      .appName("Wine Price Regression")
+      .appName("Email Importance Regression")
       .master("local")
       .getOrCreate()
-
+//to	from	date	rank
     //We'll define a partial schema with the values we are interested in. For the sake of the example points is a Double
     val schemaStruct = StructType(
-      StructField("Avg Area Income", DoubleType) ::
-        StructField("Avg Area House Age", DoubleType) ::
-        StructField("Avg Area Number of Rooms", DoubleType) ::
-        StructField("Avg Area Number of Bedrooms", DoubleType) ::
-        StructField("Area Population", DoubleType) ::
-        StructField("Price", DoubleType) :: Nil
+      StructField("to", StringType) ::
+        StructField("from", StringType) ::
+        StructField("date", StringType) ::
+        StructField("rank", IntegerType) ::Nil
     )
 
     //We read the data from the file taking into account there's a header.
@@ -28,27 +27,37 @@ object WineTester {
     val df = spark.read
       .option("header", true)
       .schema(schemaStruct)
-      .csv("D:\\repo\\Clean-USA-Housing1.csv")
+      .csv( getClass.getResource("email-rank.csv").getPath )
       .na.drop()
-
+//"email-rank.csv"
     //We'll split the set into training and test data
     val Array(trainingData, testData) = df.randomSplit(Array(0.8, 0.2))
 
-    val labelColumn = "Price"
+    val labelColumn = "rank"
 
     //We define two StringIndexers for the categorical variables
 
-/*    val countryIndexer = new StringIndexer()
-      .setInputCol("country")
-      .setOutputCol("countryIndex")*/
+
+    val toIndexer = new StringIndexer()
+      .setInputCol("to")
+      .setOutputCol("toIndex1")
+
+    val fromIndexer = new StringIndexer()
+      .setInputCol("from")
+      .setOutputCol("fromIndex1")
+
+    val dateIndexer = new StringIndexer()
+      .setInputCol("date")
+      .setOutputCol("dateIndex1")
+
 
     //We define the assembler to collect the columns into a new column with a single vector - "features"
     val assembler = new VectorAssembler()
-      .setInputCols(Array("Avg Area Income","Avg Area House Age","Avg Area Number of Rooms","Avg Area Number of Bedrooms","Area Population"))
+      .setInputCols(Array("toIndex1","fromIndex1","dateIndex1"))
       .setOutputCol("features")
 
     //----
-    val output =assembler.transform(df).select(labelColumn,"features");
+   // val output =assembler.transform(df).select(labelColumn,"features");
     //----
     //For the regression we'll use the Gradient-boosted tree estimator
     val gbt = new GBTRegressor()
@@ -59,7 +68,9 @@ object WineTester {
 
     //We define the Array with the stages of the pipeline
     val stages = Array(
-      /*countryIndexer,*/
+      toIndexer,
+      fromIndexer,
+      dateIndexer,
       assembler,
       gbt
     )
@@ -86,16 +97,12 @@ object WineTester {
     val error = evaluator.evaluate(predictions)
   //model.transform()
     println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"+error)
-    val values = List(79545.45857,5.682861322,7.009188143,4.09,23086.8005)
-    val newList = values.map(Tuple1(_))
 
     val df2 = spark.createDataFrame(Seq(
-      (79545.45857,5.682861322,7.009188143,4.09,23086.8005)
-    )).toDF("Avg Area Income",
-      "Avg Area House Age",
-      "Avg Area Number of Rooms",
-      "Avg Area Number of Bedrooms",
-      "Area Population")
+      ("myself"," myteam","today")
+    )).toDF("to",
+      "from",
+      "date")
     println("------ result -----------")
     model.transform(df2).show()
     spark.stop()
